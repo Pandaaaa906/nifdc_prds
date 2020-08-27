@@ -13,8 +13,8 @@ FROM nifdc_base
 
 COPY ./cron_nifdc /etc/cron.d/cronpy
 COPY ./nifdc_prds /app
-COPY ./entrypoint.sh /
-RUN chmod -R 744 /entrypoint.sh
-WORKDIR /app
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod -R 777 /entrypoint.sh
+WORKDIR /
 
-ENTRYPOINT /entrypoint.sh
+ENTRYPOINT ["bash", "/entrypoint.sh"]
