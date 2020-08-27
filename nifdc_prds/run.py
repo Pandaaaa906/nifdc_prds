@@ -1,6 +1,7 @@
 #!/usr/local/bin/python
 import re
 from datetime import datetime
+from itertools import zip_longest
 from math import ceil
 from urllib.parse import urljoin
 
@@ -27,6 +28,17 @@ def login(session, user, password):
     return session.post(url_login, data=d)
 
 
+def process_item(item):
+    now = datetime.now()
+    return (
+        NifdcPrd.insert(**item)
+            .on_conflict(
+            conflict_target=[NifdcPrd.cat_no, NifdcPrd.lot],  # Which constraint?
+            update={**item, 'modified_at': now})
+            .execute()
+    )
+
+
 def scrap_from(session, url):
     cur_page = 1
     max_page = None
@@ -44,6 +56,7 @@ def scrap_from(session, url):
 
         for row in rows:
             coa = row.xpath('.//td[14]/a/@href', first=True)
+            coa_url = coa and urljoin(r.url, coa)
             d = {
                 'goods_id': row.xpath(tmp.format('sgoods_id'), first=True),
                 'key_id': row.xpath(tmp.format('key_id'), first=True),
@@ -60,15 +73,20 @@ def scrap_from(session, url):
                 'storage': row.xpath(tmp.format('save_condition'), first=True),
                 'coa_url': coa and urljoin(r.url, coa),
             }
-
-            now = datetime.now()
-            _ = (
-                NifdcPrd.insert(**d)
-                    .on_conflict(
-                    conflict_target=[NifdcPrd.cat_no, NifdcPrd.lot],  # Which constraint?
-                    update={**d, 'modified_at': now})
-                    .execute()
-            )
+            if coa_url is None:
+                _ = process_item(d)
+            else:
+                r = session.get(coa_url)
+                r.html.encoding = r.encoding
+                lots = r.html.xpath('//td[contains(text(),"批号：")]/following-sibling::td/text()')
+                coa_urls = r.html.xpath('//p/a/@href')
+                for i, (lot, pdf_url) in enumerate(zip_longest(lots, coa_urls)):
+                    d['lot'] = lot and lot.strip()
+                    d['coa_url'] = pdf_url and urljoin(r.url, pdf_url.strip())
+                    if i > 0:
+                        d['is_current_lot'] = False
+                        d['price'] = None
+                    _ = process_item(d)
         # logging
         if cur_page % 50 == 0:
             logger.info(f'Scraped {cur_page} pages')

@@ -23,6 +23,8 @@ class NifdcPrd(peewee.Model):
     storage = peewee.TextField(null=True)
     coa_url = peewee.TextField(null=True)
 
+    is_current_lot = peewee.BooleanField(default=True)
+
     created_at = peewee.DateTimeField(default=datetime.now)
     modified_at = peewee.DateTimeField(default=datetime.now)
 
