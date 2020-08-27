@@ -83,6 +83,7 @@ def scrap_from(session, url):
     logger.info(f'Url {url!r} is Done')
 
 
+@logger.catch
 def main():
     s = HTMLSession()
     logger.info(f'Logging in')
