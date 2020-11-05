@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  crawler:
+    build: .
+    env_file:
+      - secret.env
+    volumes:
+      - /www/nifdc/logs:/logs
+    restart: unless-stopped

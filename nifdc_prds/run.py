@@ -17,7 +17,7 @@ urls = (
     'http://aoc.nifdc.org.cn/sell/sgoodsQuerywaiwTs.do?formAction=queryTs',
 )
 
-logger.add("logs/nifdc_log.log", rotation="512 MB")
+logger.add("logs/nifdc_log.log", rotation="16 MB")
 
 
 def login(session, user, password):
